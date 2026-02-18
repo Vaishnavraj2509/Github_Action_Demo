@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MeetingService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">face-attendance-backend</a> &gt; <a href="index.source.html" class="el_package">com.example.faceattendance.service</a> &gt; <span class="el_source">MeetingService.java</span></div><h1>MeetingService.java</h1><pre class="source lang-java linenums">package com.example.faceattendance.service;
+
+import com.example.faceattendance.entity.Meeting;
+import com.example.faceattendance.entity.MeetingParticipant;
+import com.example.faceattendance.entity.User;
+import com.example.faceattendance.exception.ConflictException;
+import com.example.faceattendance.exception.ResourceNotFoundException;
+import com.example.faceattendance.repository.MeetingRepository;
+import com.example.faceattendance.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+<span class="fc" id="L25">public class MeetingService {</span>
+
+    @Autowired
+    private MeetingRepository meetingRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private static final String AUDIO_DIR = &quot;recordings/audio/&quot;;
+    private static final String VIDEO_DIR = &quot;recordings/video/&quot;;
+
+    public Meeting scheduleMeeting(String title, LocalDate date, LocalTime startTime, LocalTime endTime,
+            Long organizerId, List&lt;Long&gt; participantIds) {
+<span class="fc" id="L38">        validateScheduleInput(date, startTime, endTime, participantIds);</span>
+
+<span class="fc" id="L40">        User organizer = userRepository.findById(organizerId)</span>
+<span class="fc" id="L41">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Organizer not found&quot;));</span>
+<span class="fc" id="L42">        Meeting meeting = new Meeting();</span>
+<span class="fc" id="L43">        meeting.setMeetingTitle(title);</span>
+<span class="fc" id="L44">        meeting.setMeetingDate(date);</span>
+<span class="fc" id="L45">        meeting.setStartTime(startTime);</span>
+<span class="fc" id="L46">        meeting.setEndTime(endTime);</span>
+<span class="fc" id="L47">        meeting.setOrganizer(organizer);</span>
+<span class="fc" id="L48">        meeting.setStatus(Meeting.MeetingStatus.SCHEDULED);</span>
+
+<span class="fc" id="L50">        List&lt;MeetingParticipant&gt; participants = participantIds.stream().map(id -&gt; {</span>
+<span class="fc" id="L51">            User user = userRepository.findById(id).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Participant not found&quot;));</span>
+<span class="fc" id="L52">            MeetingParticipant mp = new MeetingParticipant();</span>
+<span class="fc" id="L53">            mp.setMeeting(meeting);</span>
+<span class="fc" id="L54">            mp.setUser(user);</span>
+<span class="fc" id="L55">            return mp;</span>
+<span class="fc" id="L56">        }).collect(Collectors.toList());</span>
+
+<span class="fc" id="L58">        meeting.setParticipants(participants);</span>
+<span class="fc" id="L59">        return meetingRepository.save(meeting);</span>
+    }
+
+    public Meeting startMeeting(Long meetingId) {
+<span class="fc" id="L63">        Meeting meeting = meetingRepository.findById(meetingId)</span>
+<span class="fc" id="L64">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Meeting not found&quot;));</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (meeting.getStatus() != Meeting.MeetingStatus.SCHEDULED) {</span>
+<span class="fc" id="L66">            throw new ConflictException(&quot;Meeting cannot be started&quot;);</span>
+        }
+<span class="fc" id="L68">        meeting.setStatus(Meeting.MeetingStatus.IN_PROGRESS);</span>
+<span class="fc" id="L69">        return meetingRepository.save(meeting);</span>
+    }
+
+    public Meeting stopMeeting(Long meetingId, MultipartFile recording) throws IOException {
+<span class="fc" id="L73">        Meeting meeting = meetingRepository.findById(meetingId)</span>
+<span class="fc" id="L74">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Meeting not found&quot;));</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (meeting.getStatus() != Meeting.MeetingStatus.IN_PROGRESS) {</span>
+<span class="fc" id="L76">            throw new ConflictException(&quot;Meeting is not in progress&quot;);</span>
+        }
+<span class="fc" id="L78">        meeting.setStatus(Meeting.MeetingStatus.COMPLETED);</span>
+
+<span class="fc" id="L80">        String contentType = recording.getContentType();</span>
+<span class="pc bpc" id="L81" title="2 of 4 branches missed.">        String dir = contentType != null &amp;&amp; contentType.startsWith(&quot;video/&quot;) ? VIDEO_DIR : AUDIO_DIR;</span>
+<span class="fc" id="L82">        String fileName = &quot;meeting_&quot; + meetingId + &quot;_&quot; + System.currentTimeMillis()</span>
+<span class="fc" id="L83">                + getFileExtension(recording.getOriginalFilename());</span>
+<span class="fc" id="L84">        Path filePath = Paths.get(dir, fileName);</span>
+
+<span class="fc" id="L86">        Files.createDirectories(filePath.getParent());</span>
+<span class="fc" id="L87">        Files.write(filePath, recording.getBytes());</span>
+
+<span class="pc bpc" id="L89" title="2 of 4 branches missed.">        if (contentType != null &amp;&amp; contentType.startsWith(&quot;video/&quot;)) {</span>
+<span class="fc" id="L90">            meeting.setMeetingVideoPath(filePath.toString());</span>
+        } else {
+<span class="nc" id="L92">            meeting.setMeetingAudioPath(filePath.toString());</span>
+        }
+
+<span class="fc" id="L95">        return meetingRepository.save(meeting);</span>
+    }
+
+    public Optional&lt;Meeting&gt; getMeetingById(Long meetingId) {
+<span class="fc" id="L99">        return meetingRepository.findById(meetingId);</span>
+    }
+
+    private String getFileExtension(String filename) {
+<span class="pc bpc" id="L103" title="2 of 4 branches missed.">        return filename != null &amp;&amp; filename.contains(&quot;.&quot;) ? filename.substring(filename.lastIndexOf(&quot;.&quot;)) : &quot;&quot;;</span>
+    }
+
+    private void validateScheduleInput(LocalDate date, LocalTime startTime, LocalTime endTime, List&lt;Long&gt; participantIds) {
+<span class="pc bpc" id="L107" title="3 of 6 branches missed.">        if (date == null || startTime == null || endTime == null) {</span>
+<span class="nc" id="L108">            throw new IllegalArgumentException(&quot;Date and time are required&quot;);</span>
+        }
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (date.isBefore(LocalDate.now())) {</span>
+<span class="fc" id="L111">            throw new IllegalArgumentException(&quot;Meeting date cannot be in the past&quot;);</span>
+        }
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (!endTime.isAfter(startTime)) {</span>
+<span class="fc" id="L114">            throw new IllegalArgumentException(&quot;End time must be after start time&quot;);</span>
+        }
+<span class="pc bpc" id="L116" title="1 of 4 branches missed.">        if (participantIds == null || participantIds.isEmpty()) {</span>
+<span class="fc" id="L117">            throw new IllegalArgumentException(&quot;At least one participant is required&quot;);</span>
+        }
+<span class="fc" id="L119">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

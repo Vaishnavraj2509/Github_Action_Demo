@@ -1,0 +1,6 @@
+com\example\faceattendance\controller\UserControllerTest.class
+com\example\faceattendance\controller\AttendanceControllerTest.class
+com\example\faceattendance\controller\MeetingControllerTest.class
+com\example\faceattendance\service\AttendanceServiceTest.class
+com\example\faceattendance\service\MeetingServiceTest.class
+com\example\faceattendance\service\UserServiceTest.class

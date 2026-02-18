@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Meeting.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">face-attendance-backend</a> &gt; <a href="index.source.html" class="el_package">com.example.faceattendance.entity</a> &gt; <span class="el_source">Meeting.java</span></div><h1>Meeting.java</h1><pre class="source lang-java linenums">package com.example.faceattendance.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = &quot;meetings&quot;)
+<span class="fc" id="L13">public class Meeting {</span>
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = &quot;meeting_id&quot;)
+    private Long meetingId;
+
+    @Column(name = &quot;meeting_title&quot;, nullable = false)
+    private String meetingTitle;
+
+    @Column(name = &quot;meeting_date&quot;, nullable = false)
+    private LocalDate meetingDate;
+
+    @Column(name = &quot;start_time&quot;, nullable = false)
+    private LocalTime startTime;
+
+    @Column(name = &quot;end_time&quot;)
+    private LocalTime endTime;
+
+<span class="fc" id="L32">    @Enumerated(EnumType.STRING)</span>
+    @Column(nullable = false)
+    private MeetingStatus status = MeetingStatus.SCHEDULED;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;organizer_id&quot;, nullable = false)
+    @JsonIgnoreProperties({ &quot;hibernateLazyInitializer&quot;, &quot;handler&quot; })
+    private User organizer;
+
+    @Column(name = &quot;meeting_audio_path&quot;)
+    private String meetingAudioPath;
+
+    @Column(name = &quot;meeting_video_path&quot;)
+    private String meetingVideoPath;
+
+    @OneToMany(mappedBy = &quot;meeting&quot;, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List&lt;MeetingParticipant&gt; participants;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+<span class="nc" id="L59">        createdAt = LocalDateTime.now();</span>
+<span class="nc" id="L60">        updatedAt = LocalDateTime.now();</span>
+<span class="nc" id="L61">    }</span>
+
+    @PreUpdate
+    protected void onUpdate() {
+<span class="nc" id="L65">        updatedAt = LocalDateTime.now();</span>
+<span class="nc" id="L66">    }</span>
+
+    // Getters and Setters
+    public Long getMeetingId() {
+<span class="fc" id="L70">        return meetingId;</span>
+    }
+
+    public void setMeetingId(Long meetingId) {
+<span class="nc" id="L74">        this.meetingId = meetingId;</span>
+<span class="nc" id="L75">    }</span>
+
+    public String getMeetingTitle() {
+<span class="fc" id="L78">        return meetingTitle;</span>
+    }
+
+    public void setMeetingTitle(String meetingTitle) {
+<span class="fc" id="L82">        this.meetingTitle = meetingTitle;</span>
+<span class="fc" id="L83">    }</span>
+
+    public LocalDate getMeetingDate() {
+<span class="fc" id="L86">        return meetingDate;</span>
+    }
+
+    public void setMeetingDate(LocalDate meetingDate) {
+<span class="fc" id="L90">        this.meetingDate = meetingDate;</span>
+<span class="fc" id="L91">    }</span>
+
+    public LocalTime getStartTime() {
+<span class="fc" id="L94">        return startTime;</span>
+    }
+
+    public void setStartTime(LocalTime startTime) {
+<span class="fc" id="L98">        this.startTime = startTime;</span>
+<span class="fc" id="L99">    }</span>
+
+    public LocalTime getEndTime() {
+<span class="fc" id="L102">        return endTime;</span>
+    }
+
+    public void setEndTime(LocalTime endTime) {
+<span class="fc" id="L106">        this.endTime = endTime;</span>
+<span class="fc" id="L107">    }</span>
+
+    public MeetingStatus getStatus() {
+<span class="fc" id="L110">        return status;</span>
+    }
+
+    public void setStatus(MeetingStatus status) {
+<span class="fc" id="L114">        this.status = status;</span>
+<span class="fc" id="L115">    }</span>
+
+    public User getOrganizer() {
+<span class="fc" id="L118">        return organizer;</span>
+    }
+
+    public void setOrganizer(User organizer) {
+<span class="fc" id="L122">        this.organizer = organizer;</span>
+<span class="fc" id="L123">    }</span>
+
+    public String getMeetingAudioPath() {
+<span class="fc" id="L126">        return meetingAudioPath;</span>
+    }
+
+    public void setMeetingAudioPath(String meetingAudioPath) {
+<span class="fc" id="L130">        this.meetingAudioPath = meetingAudioPath;</span>
+<span class="fc" id="L131">    }</span>
+
+    public String getMeetingVideoPath() {
+<span class="fc" id="L134">        return meetingVideoPath;</span>
+    }
+
+    public void setMeetingVideoPath(String meetingVideoPath) {
+<span class="fc" id="L138">        this.meetingVideoPath = meetingVideoPath;</span>
+<span class="fc" id="L139">    }</span>
+
+    public List&lt;MeetingParticipant&gt; getParticipants() {
+<span class="fc" id="L142">        return participants;</span>
+    }
+
+    public void setParticipants(List&lt;MeetingParticipant&gt; participants) {
+<span class="fc" id="L146">        this.participants = participants;</span>
+<span class="fc" id="L147">    }</span>
+
+    public LocalDateTime getCreatedAt() {
+<span class="fc" id="L150">        return createdAt;</span>
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+<span class="nc" id="L154">        this.createdAt = createdAt;</span>
+<span class="nc" id="L155">    }</span>
+
+    public LocalDateTime getUpdatedAt() {
+<span class="fc" id="L158">        return updatedAt;</span>
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+<span class="nc" id="L162">        this.updatedAt = updatedAt;</span>
+<span class="nc" id="L163">    }</span>
+
+<span class="fc" id="L165">    public enum MeetingStatus {</span>
+<span class="fc" id="L166">        SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

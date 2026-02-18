@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MeetingController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">face-attendance-backend</a> &gt; <a href="index.source.html" class="el_package">com.example.faceattendance.controller</a> &gt; <span class="el_source">MeetingController.java</span></div><h1>MeetingController.java</h1><pre class="source lang-java linenums">package com.example.faceattendance.controller;
+
+import com.example.faceattendance.entity.Meeting;
+import com.example.faceattendance.service.MeetingService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping(&quot;/meetings&quot;)
+<span class="fc" id="L26">public class MeetingController {</span>
+
+    @Autowired
+    private MeetingService meetingService;
+
+    @PostMapping(&quot;/schedule&quot;)
+    public ResponseEntity&lt;Meeting&gt; scheduleMeeting(
+            @RequestParam String title,
+            @RequestParam String date,
+            @RequestParam String startTime,
+            @RequestParam String endTime,
+            @RequestParam Long organizerId,
+            @RequestParam List&lt;Long&gt; participantIds) {
+<span class="fc" id="L39">        LocalDate meetingDate = LocalDate.parse(date);</span>
+<span class="fc" id="L40">        LocalTime start = LocalTime.parse(startTime);</span>
+<span class="fc" id="L41">        LocalTime end = LocalTime.parse(endTime);</span>
+<span class="fc" id="L42">        Meeting meeting = meetingService.scheduleMeeting(title, meetingDate, start, end, organizerId, participantIds);</span>
+<span class="fc" id="L43">        return ResponseEntity.ok(meeting);</span>
+    }
+
+    @PutMapping(&quot;/{id}/start&quot;)
+    public ResponseEntity&lt;Meeting&gt; startMeeting(@PathVariable Long id) {
+<span class="fc" id="L48">        Meeting meeting = meetingService.startMeeting(id);</span>
+<span class="fc" id="L49">        return ResponseEntity.ok(meeting);</span>
+    }
+
+   @PostMapping(&quot;/{id}/stop&quot;)
+public ResponseEntity&lt;Meeting&gt; stopMeeting(
+        @PathVariable Long id,
+        @RequestParam(&quot;recording&quot;) MultipartFile recording)throws IOException {
+<span class="fc" id="L56">    Meeting meeting = meetingService.stopMeeting(id, recording);</span>
+<span class="fc" id="L57">    return ResponseEntity.ok(meeting);</span>
+}
+
+
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Meeting&gt; getMeetingById(@PathVariable Long id) {
+<span class="fc" id="L63">        Optional&lt;Meeting&gt; meeting = meetingService.getMeetingById(id);</span>
+<span class="fc" id="L64">        return meeting.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());</span>
+    }
+
+    @GetMapping(&quot;/{id}/audio&quot;)
+    public ResponseEntity&lt;Resource&gt; getMeetingAudio(@PathVariable Long id) throws MalformedURLException {
+<span class="fc" id="L69">        Optional&lt;Meeting&gt; meetingOpt = meetingService.getMeetingById(id);</span>
+<span class="fc bfc" id="L70" title="All 4 branches covered.">        if (meetingOpt.isPresent() &amp;&amp; meetingOpt.get().getMeetingAudioPath() != null) {</span>
+<span class="fc" id="L71">            Path filePath = Paths.get(meetingOpt.get().getMeetingAudioPath());</span>
+<span class="pc bpc" id="L72" title="1 of 4 branches missed.">            if (Files.exists(filePath) &amp;&amp; Files.isReadable(filePath)) {</span>
+<span class="fc" id="L73">                Resource resource = new UrlResource(filePath.toUri());</span>
+<span class="fc" id="L74">                return ResponseEntity.ok()</span>
+<span class="fc" id="L75">                        .header(HttpHeaders.CONTENT_DISPOSITION,</span>
+<span class="fc" id="L76">                                &quot;attachment; filename=\&quot;&quot; + resource.getFilename() + &quot;\&quot;&quot;)</span>
+<span class="fc" id="L77">                        .contentType(MediaType.APPLICATION_OCTET_STREAM)</span>
+<span class="fc" id="L78">                        .body(resource);</span>
+            }
+        }
+<span class="fc" id="L81">        return ResponseEntity.notFound().build();</span>
+    }
+
+    @GetMapping(&quot;/{id}/video&quot;)
+    public ResponseEntity&lt;Resource&gt; getMeetingVideo(@PathVariable Long id) throws MalformedURLException {
+<span class="fc" id="L86">        Optional&lt;Meeting&gt; meetingOpt = meetingService.getMeetingById(id);</span>
+<span class="fc bfc" id="L87" title="All 4 branches covered.">        if (meetingOpt.isPresent() &amp;&amp; meetingOpt.get().getMeetingVideoPath() != null) {</span>
+<span class="fc" id="L88">            Path filePath = Paths.get(meetingOpt.get().getMeetingVideoPath());</span>
+<span class="pc bpc" id="L89" title="1 of 4 branches missed.">            if (Files.exists(filePath) &amp;&amp; Files.isReadable(filePath)) {</span>
+<span class="fc" id="L90">                Resource resource = new UrlResource(filePath.toUri());</span>
+<span class="fc" id="L91">                return ResponseEntity.ok()</span>
+<span class="fc" id="L92">                        .header(HttpHeaders.CONTENT_DISPOSITION,</span>
+<span class="fc" id="L93">                                &quot;attachment; filename=\&quot;&quot; + resource.getFilename() + &quot;\&quot;&quot;)</span>
+<span class="fc" id="L94">                        .contentType(MediaType.APPLICATION_OCTET_STREAM)</span>
+<span class="fc" id="L95">                        .body(resource);</span>
+            }
+        }
+<span class="fc" id="L98">        return ResponseEntity.notFound().build();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

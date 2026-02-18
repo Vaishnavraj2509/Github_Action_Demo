@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">face-attendance-backend</a> &gt; <a href="index.source.html" class="el_package">com.example.faceattendance.exception</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.example.faceattendance.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+
+import java.time.format.DateTimeParseException;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+<span class="fc" id="L16">public class GlobalExceptionHandler {</span>
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleNotFound(ResourceNotFoundException ex) {
+<span class="fc" id="L20">        return buildError(HttpStatus.NOT_FOUND, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleConflict(ConflictException ex) {
+<span class="fc" id="L25">        return buildError(HttpStatus.CONFLICT, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler({BadRequestException.class, IllegalArgumentException.class, DateTimeParseException.class,
+            MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleBadRequest(Exception ex) {
+<span class="fc" id="L31">        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleValidation(MethodArgumentNotValidException ex) {
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        String message = ex.getBindingResult().getFieldError() != null</span>
+<span class="nc" id="L37">                ? ex.getBindingResult().getFieldError().getDefaultMessage()</span>
+<span class="nc" id="L38">                : &quot;Validation failed&quot;;</span>
+<span class="nc" id="L39">        return buildError(HttpStatus.BAD_REQUEST, message);</span>
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleGeneric(Exception ex) {
+<span class="fc" id="L44">        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, &quot;Internal server error&quot;);</span>
+    }
+
+    private ResponseEntity&lt;Map&lt;String, String&gt;&gt; buildError(HttpStatus status, String message) {
+<span class="fc" id="L48">        Map&lt;String, String&gt; body = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        body.put(&quot;error&quot;, message != null ? message : status.getReasonPhrase());</span>
+<span class="fc" id="L50">        return ResponseEntity.status(status).body(body);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
